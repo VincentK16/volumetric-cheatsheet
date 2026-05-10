@@ -1,0 +1,1062 @@
+# Volumetric Spectrogram Cheatsheet 
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Volumetric Spectrogram — Mental Model v2</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080808;
+    --card: #111;
+    --border: #1e1e1e;
+    --green: #00ff88;
+    --green-dim: rgba(0,255,136,.12);
+    --red: #ff3355;
+    --red-dim: rgba(255,51,85,.12);
+    --yellow: #ffe566;
+    --cyan: #7df5ff;
+    --grey: #777;
+    --grey-dim: #1e1e1e;
+    --white: #f0f0f0;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--bg);
+    color: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    padding: 24px 16px 48px;
+    max-width: 620px;
+    margin: 0 auto;
+    font-size: 13px;
+  }
+
+  /* HEADER */
+  .hdr { margin-bottom: 28px; padding-bottom: 18px; border-bottom: 1px solid var(--border); }
+  .eyebrow { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:3px; color:var(--grey); margin-bottom:6px; }
+  h1 { font-family:'Bebas Neue',sans-serif; font-size:clamp(30px,7vw,48px); letter-spacing:2px; line-height:1; }
+  h1 .g { color:var(--green); }
+  .sub { margin-top:8px; font-size:12px; color:var(--grey); line-height:1.6; font-weight:300; }
+  .sub strong { color:var(--white); font-weight:500; }
+
+  /* SECTION LABEL */
+  .sl { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:3px; color:var(--grey); text-transform:uppercase; margin-bottom:10px; display:flex; align-items:center; gap:10px; }
+  .sl::after { content:''; flex:1; height:1px; background:var(--border); }
+  .section { margin-bottom:26px; }
+
+  /* CORE 2-CARD */
+  .two { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .core-card { border-radius:10px; padding:16px; border:1px solid var(--border); background:var(--card); }
+  .core-card .cc-icon { font-size:22px; margin-bottom:8px; }
+  .core-card .cc-lbl { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:2px; color:var(--grey); margin-bottom:4px; }
+  .core-card .cc-title { font-family:'Bebas Neue',sans-serif; font-size:20px; letter-spacing:1px; margin-bottom:6px; }
+  .upper-c .cc-title { color:var(--cyan); }
+  .lower-c .cc-title { color:var(--yellow); }
+  .core-card .cc-desc { font-size:11.5px; color:var(--grey); line-height:1.6; }
+  .core-card .cc-desc strong { color:var(--white); font-weight:500; }
+  .line-tag { font-family:'DM Mono',monospace; font-size:8px; padding:3px 7px; border-radius:3px; margin-top:8px; display:inline-block; }
+  .upper-c .line-tag { background:rgba(125,245,255,.08); color:var(--cyan); border:1px solid rgba(125,245,255,.2); }
+  .lower-c .line-tag { background:rgba(255,229,102,.08); color:var(--yellow); border:1px solid rgba(255,229,102,.2); }
+
+  /* COLOUR STRIP */
+  .col-strip { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .col-card { border-radius:10px; padding:14px 16px; display:flex; align-items:center; gap:12px; }
+  .col-card.gc { background:rgba(0,255,136,.06); border:1px solid rgba(0,255,136,.2); }
+  .col-card.rc { background:rgba(255,51,85,.06);  border:1px solid rgba(255,51,85,.2); }
+  .cdot { width:14px; height:14px; border-radius:50%; flex-shrink:0; }
+  .cdot.g { background:var(--green); box-shadow:0 0 8px rgba(0,255,136,.5); }
+  .cdot.r { background:var(--red);   box-shadow:0 0 8px rgba(255,51,85,.5); }
+  .col-info .cil { font-family:'Bebas Neue',sans-serif; font-size:17px; letter-spacing:.5px; margin-bottom:2px; }
+  .gc .cil { color:var(--green); }
+  .rc .cil { color:var(--red); }
+  .col-info .cid { font-size:11px; color:var(--grey); line-height:1.5; }
+  .col-info .cid strong { color:var(--white); font-weight:500; }
+
+  /* MATRIX TABLE */
+  .mtable { background:var(--card); border:1px solid var(--border); border-radius:12px; overflow:hidden; margin-bottom:10px; }
+  .mth { padding:12px 14px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:8px; }
+  .mth .mth-title { font-family:'Bebas Neue',sans-serif; font-size:18px; letter-spacing:1px; }
+  .upper-t .mth-title { color:var(--cyan); }
+  .lower-t .mth-title { color:var(--yellow); }
+  .mth .mth-sub { font-family:'DM Mono',monospace; font-size:8px; color:var(--grey); margin-left:auto; }
+
+  .mrow { display:grid; grid-template-columns:72px 12px 1fr auto; gap:8px; align-items:center; padding:10px 14px; border-bottom:1px solid rgba(30,30,30,.8); }
+  .mrow:last-child { border-bottom:none; }
+  .mv { font-family:'DM Mono',monospace; font-size:10px; font-weight:500; }
+  .mv.pos { color:var(--green); }
+  .mv.flat { color:var(--grey); }
+  .mv.neg { color:var(--red); }
+  .mdot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+  .mdot.g { background:var(--green); box-shadow:0 0 5px rgba(0,255,136,.4); }
+  .mdot.r { background:var(--red);   box-shadow:0 0 5px rgba(255,51,85,.4); }
+  .minfo { line-height:1.4; }
+  .minfo .mi { font-size:12px; color:var(--white); }
+  .minfo .ms { font-size:10.5px; color:var(--grey); display:block; margin-top:1px; }
+  .mtag { font-family:'DM Mono',monospace; font-size:8px; padding:3px 7px; border-radius:20px; white-space:nowrap; text-align:center; }
+  .t-bull  { background:var(--green-dim); color:var(--green); border:1px solid rgba(0,255,136,.25); }
+  .t-bear  { background:var(--red-dim);   color:var(--red);   border:1px solid rgba(255,51,85,.25); }
+  .t-warn  { background:rgba(255,229,102,.08); color:var(--yellow); border:1px solid rgba(255,229,102,.25); }
+  .t-watch { background:rgba(125,245,255,.08); color:var(--cyan);   border:1px solid rgba(125,245,255,.2); }
+
+  /* VELOCITY SECTION — THE NEW CONCEPT */
+  .vel-intro {
+    background: #0e0e0e;
+    border: 1px solid #2a2a2a;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 14px;
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--grey);
+  }
+  .vel-intro strong { color: var(--white); font-weight:500; }
+  .vel-intro em { color: var(--yellow); font-style: normal; }
+
+  .vel-grid { display:grid; grid-template-columns:1fr; gap:8px; }
+  .vel-card { border-radius:10px; overflow:hidden; border:1px solid var(--border); }
+  .vel-header { padding:11px 14px; display:flex; align-items:center; gap:10px; border-bottom:1px solid var(--border); }
+  .vel-header .vh-icon { font-size:16px; }
+  .vel-header .vh-title { font-family:'Bebas Neue',sans-serif; font-size:16px; letter-spacing:.5px; }
+  .vel-header .vh-tag { margin-left:auto; font-family:'DM Mono',monospace; font-size:8px; padding:2px 7px; border-radius:3px; }
+
+  /* Recovering cards */
+  .vel-rec { background:#0d1a12; }
+  .vel-rec .vel-header { background:rgba(0,255,136,.04); }
+  .vel-rec .vel-header .vh-title { color:var(--green); }
+  .vel-rec .vel-header .vh-tag { background:var(--green-dim); color:var(--green); border:1px solid rgba(0,255,136,.25); }
+
+  /* Deteriorating cards */
+  .vel-det { background:#1a0d0d; }
+  .vel-det .vel-header { background:rgba(255,51,85,.04); }
+  .vel-det .vel-header .vh-title { color:var(--red); }
+  .vel-det .vel-header .vh-tag { background:var(--red-dim); color:var(--red); border:1px solid rgba(255,51,85,.25); }
+
+  .vel-body { display:grid; grid-template-columns:1fr 1fr; }
+  .vel-col { padding:12px 14px; }
+  .vel-col:first-child { border-right:1px solid var(--border); }
+  .vel-col .vc-lbl { font-family:'DM Mono',monospace; font-size:8px; letter-spacing:2px; color:var(--grey); margin-bottom:6px; }
+  .vel-col .vc-title { font-family:'Bebas Neue',sans-serif; font-size:14px; letter-spacing:.5px; margin-bottom:5px; }
+  .vel-rec .vc-title { color:var(--green); }
+  .vel-det .vc-title { color:var(--red); }
+  .vel-col .vc-desc { font-size:11px; color:var(--grey); line-height:1.6; }
+  .vel-col .vc-desc strong { color:var(--white); font-weight:500; }
+  .vel-col .vc-price { margin-top:8px; font-size:11px; font-style:normal; }
+  .vel-rec .vc-price { color:var(--green); }
+  .vel-det .vc-price { color:var(--red); }
+
+  /* PROGRESS BAR VISUAL */
+  .prog-visual { padding:12px 14px; border-top:1px solid var(--border); background:rgba(0,0,0,.3); }
+  .prog-row { display:flex; align-items:center; gap:8px; margin-bottom:4px; }
+  .prog-row:last-child { margin-bottom:0; }
+  .prog-label { font-family:'DM Mono',monospace; font-size:8.5px; color:var(--grey); width:90px; flex-shrink:0; }
+  .prog-bar { flex:1; height:6px; border-radius:3px; background:#1a1a1a; overflow:hidden; position:relative; }
+  .prog-fill { height:100%; border-radius:3px; transition:width .3s; }
+  .prog-val { font-family:'DM Mono',monospace; font-size:9px; width:35px; text-align:right; flex-shrink:0; }
+
+  /* QUICK REF */
+  .qref { background:var(--card); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+  .qref-row { display:grid; grid-template-columns:1fr 36px 1fr; align-items:center; padding:10px 14px; border-bottom:1px solid rgba(30,30,30,.8); gap:8px; }
+  .qref-row:last-child { border-bottom:none; }
+  .qref-row .qr-state { font-size:11px; line-height:1.5; }
+  .qref-row .qr-arrow { text-align:center; font-size:16px; }
+  .qref-row .qr-price { font-family:'DM Mono',monospace; font-size:10.5px; font-weight:500; }
+  .qref-row .qr-price.bull { color:var(--green); }
+  .qref-row .qr-price.bear { color:var(--red); }
+  .qref-row .qr-price.warn { color:var(--yellow); }
+  .qref-row .qr-price.watch { color:var(--cyan); }
+
+  /* RULES */
+  .rules { background:#0d0d0d; border:1px solid #222; border-radius:12px; padding:18px; }
+  .rule { display:flex; gap:12px; padding:10px 0; border-bottom:1px solid var(--border); align-items:flex-start; }
+  .rule:last-child { border-bottom:none; padding-bottom:0; }
+  .rn { font-family:'Bebas Neue',sans-serif; font-size:26px; color:var(--green); line-height:1; flex-shrink:0; width:24px; }
+  .rt { font-size:12.5px; line-height:1.7; color:var(--white); font-weight:300; }
+  .rt strong { color:var(--green); font-weight:600; }
+  .rt em { color:var(--yellow); font-style:normal; }
+
+  .footer { text-align:center; font-family:'DM Mono',monospace; font-size:9px; color:#2a2a2a; letter-spacing:2px; margin-top:24px; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="eyebrow">Oberlunar · Mental Hack v2</div>
+  <h1>FLOOR <span class="g">&</span> CEILING</h1>
+  <p class="sub">Three layers tell the full story: <strong>State</strong> (pos/flat/neg) = where are we. <strong>Colour</strong> (green/red) = who's winning now. <strong>Direction</strong> (improving/worsening) = where are we going.</p>
+</div>
+
+<!-- CORE MENTAL MODEL -->
+<div class="section">
+  <div class="sl">The Core Hack</div>
+  <div class="two">
+    <div class="core-card upper-c">
+      <div class="cc-icon">🔼</div>
+      <div class="cc-lbl">Upper Oscillator</div>
+      <div class="cc-title">THE CEILING</div>
+      <div class="cc-desc">Bins <strong>above</strong> price. Is the path upward clear or blocked?</div>
+      <div class="line-tag">DOTTED LINE</div>
+    </div>
+    <div class="core-card lower-c">
+      <div class="cc-icon">🔽</div>
+      <div class="cc-lbl">Lower Oscillator</div>
+      <div class="cc-title">THE FLOOR</div>
+      <div class="cc-desc">Bins <strong>below</strong> price. Is the cushion beneath strong or crumbling?</div>
+      <div class="line-tag">SOLID LINE</div>
+    </div>
+  </div>
+</div>
+
+<!-- COLOUR -->
+<div class="section">
+  <div class="sl">Colour = Who's Winning Right Now</div>
+  <div class="col-strip">
+    <div class="col-card gc">
+      <div class="cdot g"></div>
+      <div class="col-info">
+        <div class="cil">GREEN</div>
+        <div class="cid"><strong>Buyers dominating</strong> in that zone right now</div>
+      </div>
+    </div>
+    <div class="col-card rc">
+      <div class="cdot r"></div>
+      <div class="col-info">
+        <div class="cil">RED</div>
+        <div class="cid"><strong>Sellers dominating</strong> in that zone right now</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- UPPER TABLE -->
+<div class="section">
+  <div class="sl">Ceiling Matrix — Upper Oscillator (Dotted)</div>
+  <div class="mtable upper-t">
+    <div class="mth">
+      <span style="font-size:16px;">🔼</span>
+      <span class="mth-title">CEILING — Upper Oscillator</span>
+      <span class="mth-sub">DOTTED LINE</span>
+    </div>
+    <div class="mrow">
+      <span class="mv pos">POSITIVE</span><span class="mdot g"></span>
+      <div class="minfo"><span class="mi">Ceiling being demolished by buyers</span><span class="ms">Path above clearing fast — breakout fuel</span></div>
+      <span class="mtag t-bull">PATH CLEAR</span>
+    </div>
+    <div class="mrow">
+      <span class="mv pos">POSITIVE</span><span class="mdot r"></span>
+      <div class="minfo"><span class="mi">Ceiling clearing but sellers rebuilding</span><span class="ms">Progress slowing — watch for stall</span></div>
+      <span class="mtag t-warn">STALLING</span>
+    </div>
+    <div class="mrow">
+      <span class="mv flat">FLAT</span><span class="mdot g"></span>
+      <div class="minfo"><span class="mi">Ceiling neutral, buyers starting to chip away</span><span class="ms">Early absorption — breakout being prepared</span></div>
+      <span class="mtag t-watch">EARLY</span>
+    </div>
+    <div class="mrow">
+      <span class="mv flat">FLAT</span><span class="mdot r"></span>
+      <div class="minfo"><span class="mi">Ceiling neutral but sellers reinforcing</span><span class="ms">Resistance forming overhead</span></div>
+      <span class="mtag t-warn">RESIST.</span>
+    </div>
+    <div class="mrow">
+      <span class="mv neg">NEGATIVE</span><span class="mdot g"></span>
+      <div class="minfo"><span class="mi">Ceiling heavy but buyers starting to fight</span><span class="ms">Too early — wait for value to rise</span></div>
+      <span class="mtag t-watch">WAIT</span>
+    </div>
+    <div class="mrow">
+      <span class="mv neg">NEGATIVE</span><span class="mdot r"></span>
+      <div class="minfo"><span class="mi">Ceiling is a fortress — sellers own overhead</span><span class="ms">Strong cap, price going nowhere up</span></div>
+      <span class="mtag t-bear">BLOCKED</span>
+    </div>
+  </div>
+</div>
+
+<!-- LOWER TABLE -->
+<div class="section">
+  <div class="sl">Floor Matrix — Lower Oscillator (Solid)</div>
+  <div class="mtable lower-t">
+    <div class="mth">
+      <span style="font-size:16px;">🔽</span>
+      <span class="mth-title">FLOOR — Lower Oscillator</span>
+      <span class="mth-sub">SOLID LINE</span>
+    </div>
+    <div class="mrow">
+      <span class="mv pos">POSITIVE</span><span class="mdot g"></span>
+      <div class="minfo"><span class="mi">Floor reinforcing — buyers stacking below</span><span class="ms">Strong cushion, safe to be long</span></div>
+      <span class="mtag t-bull">SAFE LONG</span>
+    </div>
+    <div class="mrow">
+      <span class="mv pos">POSITIVE</span><span class="mdot r"></span>
+      <div class="minfo"><span class="mi">Floor was strong but sellers drilling through</span><span class="ms">Cushion thinning — reduce long exposure</span></div>
+      <span class="mtag t-warn">THINNING</span>
+    </div>
+    <div class="mrow">
+      <span class="mv flat">FLAT</span><span class="mdot g"></span>
+      <div class="minfo"><span class="mi">Floor neutral, buyers quietly patching</span><span class="ms">Quiet accumulation — floor being repaired</span></div>
+      <span class="mtag t-watch">PATCHING</span>
+    </div>
+    <div class="mrow">
+      <span class="mv flat">FLAT</span><span class="mdot r"></span>
+      <div class="minfo"><span class="mi">Floor neutral but sellers probing below</span><span class="ms">Cushion thinning — be cautious on longs</span></div>
+      <span class="mtag t-warn">PROBING</span>
+    </div>
+    <div class="mrow">
+      <span class="mv neg">NEGATIVE</span><span class="mdot g"></span>
+      <div class="minfo"><span class="mi">Floor has holes but buyers filling them</span><span class="ms">Reversal starting — wait for confirmation</span></div>
+      <span class="mtag t-watch">REVERSAL</span>
+    </div>
+    <div class="mrow">
+      <span class="mv neg">NEGATIVE</span><span class="mdot r"></span>
+      <div class="minfo"><span class="mi">Floor collapsed — no safety net at all</span><span class="ms">Sellers falling through — never long</span></div>
+      <span class="mtag t-bear">NO FLOOR</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- VELOCITY — THE NEW CONCEPT -->
+<!-- ══════════════════════════════════════════ -->
+<div class="section">
+  <div class="sl">Direction of Change — The 3rd Layer</div>
+
+  <div class="vel-intro">
+    State tells you <strong>where you are</strong>. Colour tells you <strong>who's winning</strong>. But <em>which direction the value is moving</em> tells you <strong>what's about to happen</strong>.<br><br>
+    Even if both oscillators are red and negative — <strong>the speed and direction of that change</strong> is your earliest warning of what price will do next.
+  </div>
+
+  <!-- LOWER OSCILLATOR VELOCITY -->
+  <div style="margin-bottom:8px;">
+    <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--yellow);margin-bottom:8px;">▼ FLOOR / LOWER OSCILLATOR — NEGATIVE ZONE</div>
+  </div>
+
+  <div class="vel-grid">
+
+    <!-- NEG RED MORE NEGATIVE -->
+    <div class="vel-card vel-det">
+      <div class="vel-header">
+        <span class="vh-icon">📉</span>
+        <span class="vh-title">Negative + Red → MORE Negative</span>
+        <span class="vh-tag">FREEFALL</span>
+      </div>
+      <div class="vel-body">
+        <div class="vel-col">
+          <div class="vc-lbl">What it means</div>
+          <div class="vc-title">Floor Collapsing</div>
+          <div class="vc-desc">Floor broken AND sellers <strong>accelerating</strong>. No buyers anywhere below. Selling intensifying with zero resistance.</div>
+        </div>
+        <div class="vel-col">
+          <div class="vc-lbl">Execution</div>
+          <div class="vc-title" style="color:var(--red);">NO TRADE</div>
+          <div class="vc-desc">Do not long. Do not catch. If short — <strong>hold or add</strong>. Wait for full reversal cycle before reconsidering longs.</div>
+          <div class="vc-price">↓↓ accelerating drop</div>
+        </div>
+      </div>
+      <div class="prog-visual">
+        <div class="prog-row"><span class="prog-label">Floor strength</span><div class="prog-bar"><div class="prog-fill" style="width:3%;background:rgba(255,51,85,.4);"></div></div><span class="prog-val" style="color:var(--red);">gone</span></div>
+        <div class="prog-row"><span class="prog-label">Seller momentum</span><div class="prog-bar"><div class="prog-fill" style="width:92%;background:rgba(255,51,85,.6);"></div></div><span class="prog-val" style="color:var(--red);">max</span></div>
+        <div class="prog-row"><span class="prog-label">Long readiness</span><div class="prog-bar"><div class="prog-fill" style="width:0%;background:rgba(0,255,136,.2);"></div></div><span class="prog-val" style="color:var(--grey);">0%</span></div>
+      </div>
+    </div>
+
+    <!-- NEG RED LESS NEGATIVE -->
+    <div class="vel-card" style="background:#120f0a;border:1px solid #2e2210;">
+      <div class="vel-header" style="background:rgba(255,145,0,.04);border-bottom:1px solid #2e2210;">
+        <span class="vh-icon">🔍</span>
+        <span class="vh-title">Negative + Red → LESS Negative</span>
+        <span class="vh-tag" style="background:rgba(255,229,102,.08);color:var(--yellow);border:1px solid rgba(255,229,102,.25);">WATCHING</span>
+      </div>
+      <div class="vel-body">
+        <div class="vel-col">
+          <div class="vc-lbl">What it means</div>
+          <div class="vc-title" style="color:var(--yellow);">Sellers Tiring</div>
+          <div class="vc-desc">Floor still broken, sellers still winning — but <strong>selling momentum is fading</strong>. Buyers not in yet but pressure is easing.</div>
+        </div>
+        <div class="vel-col">
+          <div class="vc-lbl">Execution</div>
+          <div class="vc-title" style="color:var(--yellow);">STANDBY</div>
+          <div class="vc-desc"><strong>No entry yet.</strong> Prepare your watchlist. Next trigger = colour flips green. That's when you move to alert mode.</div>
+          <div class="vc-price" style="color:var(--yellow);">↓ slowing → standby</div>
+        </div>
+      </div>
+      <div class="prog-visual">
+        <div class="prog-row"><span class="prog-label">Floor strength</span><div class="prog-bar"><div class="prog-fill" style="width:20%;background:rgba(255,51,85,.4);"></div></div><span class="prog-val" style="color:var(--red);">weak</span></div>
+        <div class="prog-row"><span class="prog-label">Seller momentum</span><div class="prog-bar"><div class="prog-fill" style="width:30%;background:rgba(255,229,102,.5);"></div></div><span class="prog-val" style="color:var(--yellow);">fading</span></div>
+        <div class="prog-row"><span class="prog-label">Long readiness</span><div class="prog-bar"><div class="prog-fill" style="width:20%;background:rgba(0,255,136,.2);"></div></div><span class="prog-val" style="color:var(--yellow);">20%</span></div>
+      </div>
+    </div>
+
+    <!-- NEG GREEN RECOVERING FAST -->
+    <div class="vel-card vel-rec">
+      <div class="vel-header">
+        <span class="vh-icon">⚡</span>
+        <span class="vh-title">Negative + Green → Rising Quickly Toward Zero</span>
+        <span class="vh-tag">ALERT MODE</span>
+      </div>
+      <div class="vel-body">
+        <div class="vel-col">
+          <div class="vc-lbl">What it means</div>
+          <div class="vc-title">Floor Rebuilding</div>
+          <div class="vc-desc">Floor still negative but buyers are NOW winning and <strong>recovering fast</strong>. This is the colour flip you were waiting for. Buyers fighting hard below price.</div>
+        </div>
+        <div class="vel-col">
+          <div class="vc-lbl">Execution</div>
+          <div class="vc-title" style="color:var(--green);">PREPARE ENTRY</div>
+          <div class="vc-desc"><strong>Alert mode.</strong> Do not enter yet — wait for value to cross zero. Set your entry order just above zero crossing. Confirm upper also turning green.</div>
+          <div class="vc-price" style="color:var(--green);">↑ approaching zero → entry prep</div>
+        </div>
+      </div>
+      <div class="prog-visual">
+        <div class="prog-row"><span class="prog-label">Floor strength</span><div class="prog-bar"><div class="prog-fill" style="width:45%;background:rgba(0,255,136,.4);"></div></div><span class="prog-val" style="color:var(--green);">building</span></div>
+        <div class="prog-row"><span class="prog-label">Buyer momentum</span><div class="prog-bar"><div class="prog-fill" style="width:65%;background:rgba(0,255,136,.5);"></div></div><span class="prog-val" style="color:var(--green);">strong</span></div>
+        <div class="prog-row"><span class="prog-label">Long readiness</span><div class="prog-bar"><div class="prog-fill" style="width:60%;background:rgba(0,255,136,.3);"></div></div><span class="prog-val" style="color:var(--green);">60%</span></div>
+      </div>
+    </div>
+
+    <!-- NEG GREEN SLOW RECOVERY -->
+    <div class="vel-card" style="background:#0d1108;border:1px solid #1e2a10;">
+      <div class="vel-header" style="background:rgba(0,255,136,.03);border-bottom:1px solid #1e2a10;">
+        <span class="vh-icon">🐢</span>
+        <span class="vh-title">Negative + Green → Rising SLOWLY</span>
+        <span class="vh-tag" style="background:rgba(125,245,255,.08);color:var(--cyan);border:1px solid rgba(125,245,255,.2);">PATIENCE</span>
+      </div>
+      <div class="vel-body">
+        <div class="vel-col">
+          <div class="vc-lbl">What it means</div>
+          <div class="vc-title" style="color:var(--cyan);">Weak Recovery</div>
+          <div class="vc-desc">Buyers technically winning but <strong>barely making progress</strong>. Still deep negative. Could stall and flip back red. Fragile reversal — not confirmed.</div>
+        </div>
+        <div class="vel-col">
+          <div class="vc-lbl">Execution</div>
+          <div class="vc-title" style="color:var(--cyan);">WAIT &amp; WATCH</div>
+          <div class="vc-desc"><strong>Do not enter.</strong> Recovery too slow and fragile. Watch if pace accelerates — if it does, move to alert mode. If it stalls and turns red, abandon watch.</div>
+          <div class="vc-price" style="color:var(--cyan);">→ watch pace, not position</div>
+        </div>
+      </div>
+      <div class="prog-visual">
+        <div class="prog-row"><span class="prog-label">Floor strength</span><div class="prog-bar"><div class="prog-fill" style="width:20%;background:rgba(0,255,136,.3);"></div></div><span class="prog-val" style="color:var(--cyan);">fragile</span></div>
+        <div class="prog-row"><span class="prog-label">Buyer momentum</span><div class="prog-bar"><div class="prog-fill" style="width:25%;background:rgba(0,255,136,.3);"></div></div><span class="prog-val" style="color:var(--cyan);">weak</span></div>
+        <div class="prog-row"><span class="prog-label">Long readiness</span><div class="prog-bar"><div class="prog-fill" style="width:30%;background:rgba(125,245,255,.2);"></div></div><span class="prog-val" style="color:var(--cyan);">30%</span></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- UPPER OSCILLATOR VELOCITY — NEGATIVE -->
+<div class="section">
+  <div class="sl">Negative State Velocity — Ceiling (Upper / Dotted)</div>
+  <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--cyan);margin-bottom:8px;">▲ CEILING / UPPER OSCILLATOR — NEGATIVE ZONE</div>
+
+  <div class="vel-grid">
+
+    <!-- NEG RED MORE NEGATIVE UPPER -->
+    <div class="vel-card vel-det">
+      <div class="vel-header">
+        <span class="vh-icon">🧱</span>
+        <span class="vh-title">Negative + Red → MORE Negative</span>
+        <span class="vh-tag">FORTRESS</span>
+      </div>
+      <div class="vel-body">
+        <div class="vel-col">
+          <div class="vc-lbl">What it means</div>
+          <div class="vc-title">Ceiling Fortifying</div>
+          <div class="vc-desc">Ceiling already heavy AND sellers <strong>piling on more</strong>. Resistance overhead strengthening rapidly. Any rally attempt gets crushed.</div>
+        </div>
+        <div class="vel-col">
+          <div class="vc-lbl">Execution</div>
+          <div class="vc-title" style="color:var(--red);">AVOID LONG</div>
+          <div class="vc-desc">Any long here is a trap. <strong>Hard cap above price and building.</strong> If in a long — exit. Wait for full ceiling breakdown cycle.</div>
+          <div class="vc-price">↓ weight pressing price</div>
+        </div>
+      </div>
+      <div class="prog-visual">
+        <div class="prog-row"><span class="prog-label">Ceiling weight</span><div class="prog-bar"><div class="prog-fill" style="width:95%;background:rgba(255,51,85,.6);"></div></div><span class="prog-val" style="color:var(--red);">max</span></div>
+        <div class="prog-row"><span class="prog-label">Seller overhead</span><div class="prog-bar"><div class="prog-fill" style="width:92%;background:rgba(255,51,85,.5);"></div></div><span class="prog-val" style="color:var(--red);">max</span></div>
+        <div class="prog-row"><span class="prog-label">Entry readiness</span><div class="prog-bar"><div class="prog-fill" style="width:0%;background:rgba(0,255,136,.2);"></div></div><span class="prog-val" style="color:var(--grey);">0%</span></div>
+      </div>
+    </div>
+
+    <!-- NEG RED LESS NEGATIVE UPPER -->
+    <div class="vel-card" style="background:#120f0a;border:1px solid #2e2210;">
+      <div class="vel-header" style="background:rgba(255,145,0,.04);border-bottom:1px solid #2e2210;">
+        <span class="vh-icon">🔓</span>
+        <span class="vh-title">Negative + Red → LESS Negative</span>
+        <span class="vh-tag" style="background:rgba(255,229,102,.08);color:var(--yellow);border:1px solid rgba(255,229,102,.25);">CRACKING</span>
+      </div>
+      <div class="vel-body">
+        <div class="vel-col">
+          <div class="vc-lbl">What it means</div>
+          <div class="vc-title" style="color:var(--yellow);">Sellers Tiring Above</div>
+          <div class="vc-desc">Ceiling still heavy, sellers still winning overhead — but <strong>overhead pressure is easing</strong>. Sellers running out of ammunition above.</div>
+        </div>
+        <div class="vel-col">
+          <div class="vc-lbl">Execution</div>
+          <div class="vc-title" style="color:var(--yellow);">STANDBY</div>
+          <div class="vc-desc"><strong>No entry yet.</strong> Watch for colour flip to green while still negative — that's your next trigger to move to alert mode.</div>
+          <div class="vc-price" style="color:var(--yellow);">→ ceiling cracking — standby</div>
+        </div>
+      </div>
+      <div class="prog-visual">
+        <div class="prog-row"><span class="prog-label">Ceiling weight</span><div class="prog-bar"><div class="prog-fill" style="width:45%;background:rgba(255,51,85,.4);"></div></div><span class="prog-val" style="color:var(--yellow);">easing</span></div>
+        <div class="prog-row"><span class="prog-label">Seller overhead</span><div class="prog-bar"><div class="prog-fill" style="width:35%;background:rgba(255,229,102,.5);"></div></div><span class="prog-val" style="color:var(--yellow);">fading</span></div>
+        <div class="prog-row"><span class="prog-label">Entry readiness</span><div class="prog-bar"><div class="prog-fill" style="width:20%;background:rgba(0,255,136,.2);"></div></div><span class="prog-val" style="color:var(--yellow);">20%</span></div>
+      </div>
+    </div>
+
+    <!-- NEG GREEN RECOVERING FAST UPPER -->
+    <div class="vel-card vel-rec">
+      <div class="vel-header">
+        <span class="vh-icon">💨</span>
+        <span class="vh-title">Negative + Green → Rising Quickly Toward Zero</span>
+        <span class="vh-tag">ALERT MODE</span>
+      </div>
+      <div class="vel-body">
+        <div class="vel-col">
+          <div class="vc-lbl">What it means</div>
+          <div class="vc-title">Ceiling Crumbling</div>
+          <div class="vc-desc">Ceiling still negative but buyers are NOW winning overhead and <strong>making fast progress</strong>. Sellers being overwhelmed. Overhead path clearing.</div>
+        </div>
+        <div class="vel-col">
+          <div class="vc-lbl">Execution</div>
+          <div class="vc-title" style="color:var(--green);">PREPARE ENTRY</div>
+          <div class="vc-desc"><strong>Alert mode.</strong> Confirm floor (lower) also turning green. Entry when upper value crosses zero. Ceiling clearing fast = breakout incoming.</div>
+          <div class="vc-price" style="color:var(--green);">↑ ceiling clearing → entry prep</div>
+        </div>
+      </div>
+      <div class="prog-visual">
+        <div class="prog-row"><span class="prog-label">Ceiling weight</span><div class="prog-bar"><div class="prog-fill" style="width:35%;background:rgba(255,51,85,.3);"></div></div><span class="prog-val" style="color:var(--yellow);">falling</span></div>
+        <div class="prog-row"><span class="prog-label">Buyer momentum</span><div class="prog-bar"><div class="prog-fill" style="width:70%;background:rgba(0,255,136,.5);"></div></div><span class="prog-val" style="color:var(--green);">strong</span></div>
+        <div class="prog-row"><span class="prog-label">Entry readiness</span><div class="prog-bar"><div class="prog-fill" style="width:65%;background:rgba(0,255,136,.3);"></div></div><span class="prog-val" style="color:var(--green);">65%</span></div>
+      </div>
+    </div>
+
+    <!-- NEG GREEN SLOW RECOVERY UPPER -->
+    <div class="vel-card" style="background:#0d1108;border:1px solid #1e2a10;">
+      <div class="vel-header" style="background:rgba(0,255,136,.03);border-bottom:1px solid #1e2a10;">
+        <span class="vh-icon">🐢</span>
+        <span class="vh-title">Negative + Green → Rising SLOWLY</span>
+        <span class="vh-tag" style="background:rgba(125,245,255,.08);color:var(--cyan);border:1px solid rgba(125,245,255,.2);">PATIENCE</span>
+      </div>
+      <div class="vel-body">
+        <div class="vel-col">
+          <div class="vc-lbl">What it means</div>
+          <div class="vc-title" style="color:var(--cyan);">Ceiling Slowly Thinning</div>
+          <div class="vc-desc">Buyers winning overhead but <strong>barely denting the ceiling</strong>. Still deep negative. Sellers could regroup easily. Fragile and unconvincing.</div>
+        </div>
+        <div class="vel-col">
+          <div class="vc-lbl">Execution</div>
+          <div class="vc-title" style="color:var(--cyan);">WAIT</div>
+          <div class="vc-desc"><strong>Do not enter.</strong> Ceiling too heavy to trade through yet. Watch if pace of recovery increases. If it stalls and turns red again — abandon watch entirely.</div>
+          <div class="vc-price" style="color:var(--cyan);">→ watch pace not price</div>
+        </div>
+      </div>
+      <div class="prog-visual">
+        <div class="prog-row"><span class="prog-label">Ceiling weight</span><div class="prog-bar"><div class="prog-fill" style="width:60%;background:rgba(255,51,85,.3);"></div></div><span class="prog-val" style="color:var(--cyan);">heavy</span></div>
+        <div class="prog-row"><span class="prog-label">Buyer momentum</span><div class="prog-bar"><div class="prog-fill" style="width:22%;background:rgba(0,255,136,.3);"></div></div><span class="prog-val" style="color:var(--cyan);">weak</span></div>
+        <div class="prog-row"><span class="prog-label">Entry readiness</span><div class="prog-bar"><div class="prog-fill" style="width:25%;background:rgba(125,245,255,.2);"></div></div><span class="prog-val" style="color:var(--cyan);">25%</span></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- POSITIVE VELOCITY — FLOOR -->
+<div class="section">
+  <div class="sl">Positive State Velocity — Floor (Lower / Solid)</div>
+  <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--yellow);margin-bottom:8px;">▼ FLOOR / LOWER OSCILLATOR — POSITIVE ZONE</div>
+
+  <div class="vel-grid">
+
+    <!-- POS GREEN MORE POSITIVE -->
+    <div class="vel-card vel-rec">
+      <div class="vel-header">
+        <span class="vh-icon">🚀</span>
+        <span class="vh-title">Positive + Green → Becoming MORE Positive</span>
+        <span class="vh-tag">ACCELERATING</span>
+      </div>
+      <div class="vel-body">
+        <div class="vel-col">
+          <div class="vc-lbl">What it means</div>
+          <div class="vc-title">Floor Stacking</div>
+          <div class="vc-desc">Floor already strong AND buyers <strong>pouring in more</strong>. The cushion below is thickening rapidly. Buyers aggressively defending and building.</div>
+        </div>
+        <div class="vel-col">
+          <div class="vc-lbl">Price effect</div>
+          <div class="vc-title">Strong Lift</div>
+          <div class="vc-desc">Price has a <strong>deepening safety net</strong>. Any dip gets bought aggressively. Trend has strong fuel. <strong>Stay long, add on dips.</strong></div>
+          <div class="vc-price">↑↑ strong upward pressure</div>
+        </div>
+      </div>
+      <div class="prog-visual">
+        <div class="prog-row">
+          <span class="prog-label">Floor strength</span>
+          <div class="prog-bar"><div class="prog-fill" style="width:90%;background:rgba(0,255,136,.6);"></div></div>
+          <span class="prog-val" style="color:var(--green);">max</span>
+        </div>
+        <div class="prog-row">
+          <span class="prog-label">Buyer momentum</span>
+          <div class="prog-bar"><div class="prog-fill" style="width:90%;background:rgba(0,255,136,.5);"></div></div>
+          <span class="prog-val" style="color:var(--green);">high</span>
+        </div>
+        <div class="prog-row">
+          <span class="prog-label">Long confidence</span>
+          <div class="prog-bar"><div class="prog-fill" style="width:95%;background:rgba(0,255,136,.4);"></div></div>
+          <span class="prog-val" style="color:var(--green);">max</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- POS GREEN LESS POSITIVE -->
+    <div class="vel-card" style="background:#0d1108;border:1px solid #2a3a1a;">
+      <div class="vel-header" style="background:rgba(0,255,136,.03);border-bottom:1px solid #2a3a1a;">
+        <span class="vh-icon">📊</span>
+        <span class="vh-title">Positive + Green → Becoming LESS Positive</span>
+        <span class="vh-tag" style="background:rgba(255,229,102,.08);color:var(--yellow);border:1px solid rgba(255,229,102,.25);">SLOWING</span>
+      </div>
+      <div class="vel-body">
+        <div class="vel-col">
+          <div class="vc-lbl">What it means</div>
+          <div class="vc-title" style="color:var(--yellow);">Floor Easing</div>
+          <div class="vc-desc">Floor still strong and buyers still winning — but buying <strong>intensity is fading</strong>. Fewer buyers stacking below now. Momentum decelerating.</div>
+        </div>
+        <div class="vel-col">
+          <div class="vc-lbl">Price effect</div>
+          <div class="vc-title" style="color:var(--yellow);">Gradual Slowdown</div>
+          <div class="vc-desc">Price still supported but <strong>upward momentum fading</strong>. Not reversing yet. Watch the colour — if it flips red while still positive, that's your exit warning.</div>
+          <div class="vc-price" style="color:var(--yellow);">↑ slowing — watch colour</div>
+        </div>
+      </div>
+      <div class="prog-visual">
+        <div class="prog-row">
+          <span class="prog-label">Floor strength</span>
+          <div class="prog-bar"><div class="prog-fill" style="width:65%;background:rgba(0,255,136,.4);"></div></div>
+          <span class="prog-val" style="color:var(--green);">good</span>
+        </div>
+        <div class="prog-row">
+          <span class="prog-label">Buyer momentum</span>
+          <div class="prog-bar"><div class="prog-fill" style="width:35%;background:rgba(255,229,102,.5);"></div></div>
+          <span class="prog-val" style="color:var(--yellow);">fading</span>
+        </div>
+        <div class="prog-row">
+          <span class="prog-label">Long confidence</span>
+          <div class="prog-bar"><div class="prog-fill" style="width:55%;background:rgba(255,229,102,.4);"></div></div>
+          <span class="prog-val" style="color:var(--yellow);">medium</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- POS RED LESS POSITIVE -->
+    <div class="vel-card" style="background:#1a0d0a;border:1px solid #3a1a12;">
+      <div class="vel-header" style="background:rgba(255,51,85,.03);border-bottom:1px solid #3a1a12;">
+        <span class="vh-icon">⚠️</span>
+        <span class="vh-title">Positive + Red → Becoming LESS Positive</span>
+        <span class="vh-tag" style="background:rgba(255,229,102,.08);color:var(--yellow);border:1px solid rgba(255,229,102,.25);">ERODING</span>
+      </div>
+      <div class="vel-body">
+        <div class="vel-col">
+          <div class="vc-lbl">What it means</div>
+          <div class="vc-title" style="color:var(--yellow);">Floor Eroding</div>
+          <div class="vc-desc">Floor was strong BUT sellers are <strong>drilling through</strong> the cushion and winning. Buyers losing control of the zone below price.</div>
+        </div>
+        <div class="vel-col">
+          <div class="vc-lbl">Price effect</div>
+          <div class="vc-title" style="color:var(--yellow);">Cushion Thinning</div>
+          <div class="vc-desc"><strong>Reduce long exposure.</strong> The safety net is being removed. If value keeps dropping toward 0 and goes negative — that's a full floor breakdown.</div>
+          <div class="vc-price" style="color:var(--yellow);">↓ cushion thinning fast</div>
+        </div>
+      </div>
+      <div class="prog-visual">
+        <div class="prog-row">
+          <span class="prog-label">Floor strength</span>
+          <div class="prog-bar"><div class="prog-fill" style="width:40%;background:rgba(255,229,102,.4);"></div></div>
+          <span class="prog-val" style="color:var(--yellow);">weak</span>
+        </div>
+        <div class="prog-row">
+          <span class="prog-label">Seller pressure</span>
+          <div class="prog-bar"><div class="prog-fill" style="width:60%;background:rgba(255,51,85,.5);"></div></div>
+          <span class="prog-val" style="color:var(--red);">rising</span>
+        </div>
+        <div class="prog-row">
+          <span class="prog-label">Long confidence</span>
+          <div class="prog-bar"><div class="prog-fill" style="width:25%;background:rgba(255,229,102,.3);"></div></div>
+          <span class="prog-val" style="color:var(--yellow);">low</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- POS RED DROPPING FAST -->
+    <div class="vel-card vel-det">
+      <div class="vel-header">
+        <span class="vh-icon">🔥</span>
+        <span class="vh-title">Positive + Red → Dropping Fast Toward Zero</span>
+        <span class="vh-tag">EXIT NOW</span>
+      </div>
+      <div class="vel-body">
+        <div class="vel-col">
+          <div class="vc-lbl">What it means</div>
+          <div class="vc-title">Floor Collapsing</div>
+          <div class="vc-desc">Floor was positive but sellers <strong>rapidly overwhelming</strong> buyers below. The cushion is about to disappear entirely — crossing zero is imminent.</div>
+        </div>
+        <div class="vel-col">
+          <div class="vc-lbl">Price effect</div>
+          <div class="vc-title">Sell Signal</div>
+          <div class="vc-desc"><strong>Exit longs immediately.</strong> Once value crosses zero into negative, a hard drop follows. Do not wait for confirmation — colour already told you red.</div>
+          <div class="vc-price">↓↓ exit — floor about to break</div>
+        </div>
+      </div>
+      <div class="prog-visual">
+        <div class="prog-row">
+          <span class="prog-label">Floor strength</span>
+          <div class="prog-bar"><div class="prog-fill" style="width:10%;background:rgba(255,51,85,.4);"></div></div>
+          <span class="prog-val" style="color:var(--red);">gone</span>
+        </div>
+        <div class="prog-row">
+          <span class="prog-label">Seller pressure</span>
+          <div class="prog-bar"><div class="prog-fill" style="width:85%;background:rgba(255,51,85,.6);"></div></div>
+          <span class="prog-val" style="color:var(--red);">high</span>
+        </div>
+        <div class="prog-row">
+          <span class="prog-label">Long confidence</span>
+          <div class="prog-bar"><div class="prog-fill" style="width:5%;background:rgba(255,51,85,.3);"></div></div>
+          <span class="prog-val" style="color:var(--red);">nil</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- POSITIVE VELOCITY — CEILING -->
+<div class="section">
+  <div class="sl">Positive State Velocity — Ceiling (Upper / Dotted)</div>
+  <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--cyan);margin-bottom:8px;">▲ CEILING / UPPER OSCILLATOR — POSITIVE ZONE</div>
+
+  <div class="vel-grid">
+
+    <!-- POS GREEN MORE POSITIVE UPPER -->
+    <div class="vel-card vel-rec">
+      <div class="vel-header">
+        <span class="vh-icon">💥</span>
+        <span class="vh-title">Positive + Green → Becoming MORE Positive</span>
+        <span class="vh-tag">DEMOLISHING</span>
+      </div>
+      <div class="vel-body">
+        <div class="vel-col">
+          <div class="vc-lbl">What it means</div>
+          <div class="vc-title">Ceiling Obliterated</div>
+          <div class="vc-desc">Buyers already clearing overhead AND <strong>accelerating</strong>. Sellers above price are being wiped out faster and faster. Path above is clearing rapidly.</div>
+        </div>
+        <div class="vel-col">
+          <div class="vc-lbl">Price effect</div>
+          <div class="vc-title">Breakout Power</div>
+          <div class="vc-desc">Price has <strong>maximum upward runway</strong>. Strong breakout with momentum behind it. Stay in or add. Only exit when oscillator hits resistance levels (0.5 / 0.6).</div>
+          <div class="vc-price">↑↑ breakout accelerating</div>
+        </div>
+      </div>
+      <div class="prog-visual">
+        <div class="prog-row">
+          <span class="prog-label">Ceiling cleared</span>
+          <div class="prog-bar"><div class="prog-fill" style="width:90%;background:rgba(0,255,136,.6);"></div></div>
+          <span class="prog-val" style="color:var(--green);">open</span>
+        </div>
+        <div class="prog-row">
+          <span class="prog-label">Buyer momentum</span>
+          <div class="prog-bar"><div class="prog-fill" style="width:90%;background:rgba(0,255,136,.5);"></div></div>
+          <span class="prog-val" style="color:var(--green);">max</span>
+        </div>
+        <div class="prog-row">
+          <span class="prog-label">Breakout strength</span>
+          <div class="prog-bar"><div class="prog-fill" style="width:95%;background:rgba(0,255,136,.4);"></div></div>
+          <span class="prog-val" style="color:var(--green);">max</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- POS GREEN LESS POSITIVE UPPER -->
+    <div class="vel-card" style="background:#0d1108;border:1px solid #2a3a1a;">
+      <div class="vel-header" style="background:rgba(0,255,136,.03);border-bottom:1px solid #2a3a1a;">
+        <span class="vh-icon">🧱</span>
+        <span class="vh-title">Positive + Green → Becoming LESS Positive</span>
+        <span class="vh-tag" style="background:rgba(255,229,102,.08);color:var(--yellow);border:1px solid rgba(255,229,102,.25);">STALLING</span>
+      </div>
+      <div class="vel-body">
+        <div class="vel-col">
+          <div class="vc-lbl">What it means</div>
+          <div class="vc-title" style="color:var(--yellow);">Ceiling Resisting</div>
+          <div class="vc-desc">Buyers were clearing overhead but <strong>slowing down</strong>. Sellers above are regrouping. Overhead absorption is losing steam.</div>
+        </div>
+        <div class="vel-col">
+          <div class="vc-lbl">Price effect</div>
+          <div class="vc-title" style="color:var(--yellow);">Upside Slowing</div>
+          <div class="vc-desc">Price still moving up but <strong>momentum fading</strong>. Watch if colour flips red while positive — that's your TP / exit signal before a stall or pullback.</div>
+          <div class="vc-price" style="color:var(--yellow);">↑ slowing — prepare TP</div>
+        </div>
+      </div>
+      <div class="prog-visual">
+        <div class="prog-row">
+          <span class="prog-label">Ceiling cleared</span>
+          <div class="prog-bar"><div class="prog-fill" style="width:60%;background:rgba(0,255,136,.4);"></div></div>
+          <span class="prog-val" style="color:var(--green);">partial</span>
+        </div>
+        <div class="prog-row">
+          <span class="prog-label">Buyer momentum</span>
+          <div class="prog-bar"><div class="prog-fill" style="width:30%;background:rgba(255,229,102,.5);"></div></div>
+          <span class="prog-val" style="color:var(--yellow);">fading</span>
+        </div>
+        <div class="prog-row">
+          <span class="prog-label">Breakout strength</span>
+          <div class="prog-bar"><div class="prog-fill" style="width:40%;background:rgba(255,229,102,.4);"></div></div>
+          <span class="prog-val" style="color:var(--yellow);">weak</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- POS RED LESS POSITIVE UPPER -->
+    <div class="vel-card" style="background:#1a0d0a;border:1px solid #3a1a12;">
+      <div class="vel-header" style="background:rgba(255,51,85,.03);border-bottom:1px solid #3a1a12;">
+        <span class="vh-icon">🔄</span>
+        <span class="vh-title">Positive + Red → Becoming LESS Positive</span>
+        <span class="vh-tag" style="background:rgba(255,229,102,.08);color:var(--yellow);border:1px solid rgba(255,229,102,.25);">REBUILDING</span>
+      </div>
+      <div class="vel-body">
+        <div class="vel-col">
+          <div class="vc-lbl">What it means</div>
+          <div class="vc-title" style="color:var(--yellow);">Ceiling Rebuilding</div>
+          <div class="vc-desc">Overhead was clearing but sellers are <strong>returning and rebuilding</strong> resistance above. Buyers losing control of the ceiling zone.</div>
+        </div>
+        <div class="vel-col">
+          <div class="vc-lbl">Price effect</div>
+          <div class="vc-title" style="color:var(--yellow);">Stall / Pullback</div>
+          <div class="vc-desc"><strong>Take profit or reduce.</strong> Overhead resistance is reforming. Price likely to stall and pull back. The ceiling that was clearing is now closing again.</div>
+          <div class="vc-price" style="color:var(--yellow);">→ TP — resistance returning</div>
+        </div>
+      </div>
+      <div class="prog-visual">
+        <div class="prog-row">
+          <span class="prog-label">Ceiling cleared</span>
+          <div class="prog-bar"><div class="prog-fill" style="width:35%;background:rgba(255,229,102,.4);"></div></div>
+          <span class="prog-val" style="color:var(--yellow);">closing</span>
+        </div>
+        <div class="prog-row">
+          <span class="prog-label">Seller pressure</span>
+          <div class="prog-bar"><div class="prog-fill" style="width:60%;background:rgba(255,51,85,.5);"></div></div>
+          <span class="prog-val" style="color:var(--red);">rising</span>
+        </div>
+        <div class="prog-row">
+          <span class="prog-label">Breakout strength</span>
+          <div class="prog-bar"><div class="prog-fill" style="width:20%;background:rgba(255,51,85,.3);"></div></div>
+          <span class="prog-val" style="color:var(--red);">low</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- POS RED DROPPING FAST UPPER -->
+    <div class="vel-card vel-det">
+      <div class="vel-header">
+        <span class="vh-icon">🚨</span>
+        <span class="vh-title">Positive + Red → Dropping Fast Toward Zero</span>
+        <span class="vh-tag">TP NOW</span>
+      </div>
+      <div class="vel-body">
+        <div class="vel-col">
+          <div class="vc-lbl">What it means</div>
+          <div class="vc-title">Ceiling Slamming Shut</div>
+          <div class="vc-desc">The clear path overhead is <strong>slamming shut rapidly</strong>. Sellers flooding back in above. What was an open ceiling is closing at speed.</div>
+        </div>
+        <div class="vel-col">
+          <div class="vc-lbl">Price effect</div>
+          <div class="vc-title">Hard Rejection</div>
+          <div class="vc-desc"><strong>Take profit immediately.</strong> A hard price rejection is imminent. Once value crosses zero negative, the ceiling becomes a fortress. This is the TP signal you were waiting for.</div>
+          <div class="vc-price">↓ TP — ceiling closing fast</div>
+        </div>
+      </div>
+      <div class="prog-visual">
+        <div class="prog-row">
+          <span class="prog-label">Ceiling cleared</span>
+          <div class="prog-bar"><div class="prog-fill" style="width:8%;background:rgba(255,51,85,.4);"></div></div>
+          <span class="prog-val" style="color:var(--red);">shut</span>
+        </div>
+        <div class="prog-row">
+          <span class="prog-label">Seller pressure</span>
+          <div class="prog-bar"><div class="prog-fill" style="width:88%;background:rgba(255,51,85,.6);"></div></div>
+          <span class="prog-val" style="color:var(--red);">max</span>
+        </div>
+        <div class="prog-row">
+          <span class="prog-label">Breakout strength</span>
+          <div class="prog-bar"><div class="prog-fill" style="width:5%;background:rgba(255,51,85,.3);"></div></div>
+          <span class="prog-val" style="color:var(--red);">nil</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- TRADING EXECUTION TABLE -->
+<div class="section">
+  <div class="sl">Trading Execution — All Cases</div>
+
+  <div class="vel-intro">
+    Use this as your <strong>decision tree</strong> during live trading. Check Floor first, then Ceiling, then execute. Every row = a real state you will see on the chart.
+  </div>
+
+  <!-- ENTRY SETUPS -->
+  <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--green);margin-bottom:8px;margin-top:4px;">▶ ENTRY SETUPS</div>
+  <div class="mtable" style="margin-bottom:12px;">
+    <div class="mth" style="background:rgba(0,255,136,.05);">
+      <span style="font-size:14px;">🟢</span>
+      <span class="mth-title" style="color:var(--green);">CONDITIONS TO ENTER LONG</span>
+    </div>
+    <div class="mrow" style="grid-template-columns:1fr 1fr auto;">
+      <div class="minfo"><span class="mi" style="color:var(--yellow);">FLOOR</span><span class="ms">Neg+Green rising fast toward 0</span></div>
+      <div class="minfo"><span class="mi" style="color:var(--cyan);">CEILING</span><span class="ms">Neg+Green rising fast toward 0</span></div>
+      <span class="mtag t-watch">ALERT — ENTER AT ZERO CROSS</span>
+    </div>
+    <div class="mrow" style="grid-template-columns:1fr 1fr auto;">
+      <div class="minfo"><span class="mi" style="color:var(--yellow);">FLOOR</span><span class="ms">Flat+Green or Pos+Green</span></div>
+      <div class="minfo"><span class="mi" style="color:var(--cyan);">CEILING</span><span class="ms">Flat+Green (reset after spike)</span></div>
+      <span class="mtag t-bull">ENTER — CONTINUATION LONG</span>
+    </div>
+    <div class="mrow" style="grid-template-columns:1fr 1fr auto;">
+      <div class="minfo"><span class="mi" style="color:var(--yellow);">FLOOR</span><span class="ms">Pos+Green rising fast</span></div>
+      <div class="minfo"><span class="mi" style="color:var(--cyan);">CEILING</span><span class="ms">Pos+Green rising fast</span></div>
+      <span class="mtag t-bull">ENTER — STRONGEST LONG</span>
+    </div>
+    <div class="mrow" style="grid-template-columns:1fr 1fr auto;">
+      <div class="minfo"><span class="mi" style="color:var(--yellow);">FLOOR</span><span class="ms">Neg+Green rising fast</span></div>
+      <div class="minfo"><span class="mi" style="color:var(--cyan);">CEILING</span><span class="ms">Pos+Green or Flat+Green</span></div>
+      <span class="mtag t-watch">ENTER — FLOOR LEADING RECOVERY</span>
+    </div>
+  </div>
+
+  <!-- HOLD CONDITIONS -->
+  <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--cyan);margin-bottom:8px;">▶ HOLD CONDITIONS</div>
+  <div class="mtable" style="margin-bottom:12px;">
+    <div class="mth" style="background:rgba(125,245,255,.05);">
+      <span style="font-size:14px;">🔵</span>
+      <span class="mth-title" style="color:var(--cyan);">CONDITIONS TO HOLD POSITION</span>
+    </div>
+    <div class="mrow" style="grid-template-columns:1fr 1fr auto;">
+      <div class="minfo"><span class="mi" style="color:var(--yellow);">FLOOR</span><span class="ms">Pos+Green accelerating</span></div>
+      <div class="minfo"><span class="mi" style="color:var(--cyan);">CEILING</span><span class="ms">Pos+Green accelerating</span></div>
+      <span class="mtag t-bull">HOLD — ADD ON DIPS</span>
+    </div>
+    <div class="mrow" style="grid-template-columns:1fr 1fr auto;">
+      <div class="minfo"><span class="mi" style="color:var(--yellow);">FLOOR</span><span class="ms">Pos+Green slowing slightly</span></div>
+      <div class="minfo"><span class="mi" style="color:var(--cyan);">CEILING</span><span class="ms">Pos+Green still rising</span></div>
+      <span class="mtag t-bull">HOLD — CEILING STILL CLEARING</span>
+    </div>
+    <div class="mrow" style="grid-template-columns:1fr 1fr auto;">
+      <div class="minfo"><span class="mi" style="color:var(--yellow);">FLOOR</span><span class="ms">Flat+Green (quiet)</span></div>
+      <div class="minfo"><span class="mi" style="color:var(--cyan);">CEILING</span><span class="ms">Pos+Green rising</span></div>
+      <span class="mtag t-bull">HOLD — BASE STABLE CEILING CLEARING</span>
+    </div>
+  </div>
+
+  <!-- TP CONDITIONS -->
+  <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--yellow);margin-bottom:8px;">▶ TAKE PROFIT CONDITIONS</div>
+  <div class="mtable" style="margin-bottom:12px;">
+    <div class="mth" style="background:rgba(255,229,102,.05);">
+      <span style="font-size:14px;">🟡</span>
+      <span class="mth-title" style="color:var(--yellow);">CONDITIONS TO TAKE PROFIT</span>
+    </div>
+    <div class="mrow" style="grid-template-columns:1fr 1fr auto;">
+      <div class="minfo"><span class="mi" style="color:var(--yellow);">FLOOR</span><span class="ms">Any state</span></div>
+      <div class="minfo"><span class="mi" style="color:var(--cyan);">CEILING</span><span class="ms">Hits 0.3 / 0.5 / 0.6 resistance</span></div>
+      <span class="mtag t-warn">TP — OSC RESISTANCE HIT</span>
+    </div>
+    <div class="mrow" style="grid-template-columns:1fr 1fr auto;">
+      <div class="minfo"><span class="mi" style="color:var(--yellow);">FLOOR</span><span class="ms">Pos+Green slowing fast</span></div>
+      <div class="minfo"><span class="mi" style="color:var(--cyan);">CEILING</span><span class="ms">Pos+Red dropping toward 0</span></div>
+      <span class="mtag t-warn">TP — CEILING SLAMMING SHUT</span>
+    </div>
+    <div class="mrow" style="grid-template-columns:1fr 1fr auto;">
+      <div class="minfo"><span class="mi" style="color:var(--yellow);">FLOOR</span><span class="ms">Pos+Red (eroding)</span></div>
+      <div class="minfo"><span class="mi" style="color:var(--cyan);">CEILING</span><span class="ms">Pos+Red (rebuilding sellers)</span></div>
+      <span class="mtag t-warn">TP — BOTH ZONES WEAKENING</span>
+    </div>
+    <div class="mrow" style="grid-template-columns:1fr 1fr auto;">
+      <div class="minfo"><span class="mi" style="color:var(--yellow);">FLOOR</span><span class="ms">Second test peak lower</span></div>
+      <div class="minfo"><span class="mi" style="color:var(--cyan);">CEILING</span><span class="ms">At resistance, same or higher peak</span></div>
+      <span class="mtag t-warn">TP — RESISTANCE NOT CLEARING</span>
+    </div>
+  </div>
+
+  <!-- EXIT CONDITIONS -->
+  <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--red);margin-bottom:8px;">▶ EXIT / STOP CONDITIONS</div>
+  <div class="mtable" style="margin-bottom:12px;">
+    <div class="mth" style="background:rgba(255,51,85,.05);">
+      <span style="font-size:14px;">🔴</span>
+      <span class="mth-title" style="color:var(--red);">CONDITIONS TO EXIT LONG IMMEDIATELY</span>
+    </div>
+    <div class="mrow" style="grid-template-columns:1fr 1fr auto;">
+      <div class="minfo"><span class="mi" style="color:var(--yellow);">FLOOR</span><span class="ms">Pos+Red dropping fast toward 0</span></div>
+      <div class="minfo"><span class="mi" style="color:var(--cyan);">CEILING</span><span class="ms">Any state</span></div>
+      <span class="mtag t-bear">EXIT — FLOOR ABOUT TO BREAK</span>
+    </div>
+    <div class="mrow" style="grid-template-columns:1fr 1fr auto;">
+      <div class="minfo"><span class="mi" style="color:var(--yellow);">FLOOR</span><span class="ms">Crossing 0 into negative+Red</span></div>
+      <div class="minfo"><span class="mi" style="color:var(--cyan);">CEILING</span><span class="ms">Any state</span></div>
+      <span class="mtag t-bear">EXIT — FLOOR BROKEN</span>
+    </div>
+    <div class="mrow" style="grid-template-columns:1fr 1fr auto;">
+      <div class="minfo"><span class="mi" style="color:var(--yellow);">FLOOR</span><span class="ms">Neg+Red more negative</span></div>
+      <div class="minfo"><span class="mi" style="color:var(--cyan);">CEILING</span><span class="ms">Neg+Red more negative</span></div>
+      <span class="mtag t-bear">EXIT — ALL ZONES COLLAPSING</span>
+    </div>
+  </div>
+
+  <!-- NO TRADE CONDITIONS -->
+  <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--grey);margin-bottom:8px;">▶ NO TRADE CONDITIONS</div>
+  <div class="mtable" style="margin-bottom:0;">
+    <div class="mth" style="background:rgba(84,84,84,.08);">
+      <span style="font-size:14px;">⚫</span>
+      <span class="mth-title" style="color:var(--grey);">CONDITIONS TO STAND ASIDE</span>
+    </div>
+    <div class="mrow" style="grid-template-columns:1fr 1fr auto;">
+      <div class="minfo"><span class="mi" style="color:var(--yellow);">FLOOR</span><span class="ms">Neg+Green slow recovery</span></div>
+      <div class="minfo"><span class="mi" style="color:var(--cyan);">CEILING</span><span class="ms">Neg+Red still heavy</span></div>
+      <span class="mtag" style="background:#1e1e1e;color:var(--grey);border:1px solid #333;">WAIT — CEILING STILL BLOCKING</span>
+    </div>
+    <div class="mrow" style="grid-template-columns:1fr 1fr auto;">
+      <div class="minfo"><span class="mi" style="color:var(--yellow);">FLOOR</span><span class="ms">Neg+Red less negative</span></div>
+      <div class="minfo"><span class="mi" style="color:var(--cyan);">CEILING</span><span class="ms">Neg+Red less negative</span></div>
+      <span class="mtag" style="background:#1e1e1e;color:var(--grey);border:1px solid #333;">WAIT — SELLERS TIRING NOT DONE</span>
+    </div>
+    <div class="mrow" style="grid-template-columns:1fr 1fr auto;">
+      <div class="minfo"><span class="mi" style="color:var(--yellow);">FLOOR</span><span class="ms">Pos+Green</span></div>
+      <div class="minfo"><span class="mi" style="color:var(--cyan);">CEILING</span><span class="ms">Neg+Red more negative</span></div>
+      <span class="mtag" style="background:#1e1e1e;color:var(--grey);border:1px solid #333;">WAIT — CEILING FORTRESS BLOCKS LONG</span>
+    </div>
+    <div class="mrow" style="grid-template-columns:1fr 1fr auto;">
+      <div class="minfo"><span class="mi" style="color:var(--yellow);">FLOOR</span><span class="ms">Any red state</span></div>
+      <div class="minfo"><span class="mi" style="color:var(--cyan);">CEILING</span><span class="ms">Any state</span></div>
+      <span class="mtag" style="background:#1e1e1e;color:var(--grey);border:1px solid #333;">WAIT — NO FLOOR = NO LONG</span>
+    </div>
+  </div>
+</div>
+
+<!-- COMPLETE MENTAL SEQUENCE -->
+<div class="section">
+  <div class="sl">The 3-Question Mental Checklist</div>
+  <div class="rules">
+    <div class="rule">
+      <div class="rn">1</div>
+      <div class="rt"><strong>WHERE is the value?</strong> Positive = zone controlled by buyers. Flat = neutral. Negative = sellers in control. This is your baseline.</div>
+    </div>
+    <div class="rule">
+      <div class="rn">2</div>
+      <div class="rt"><strong>What colour is the line?</strong> Green = buyers winning the battle RIGHT NOW. Red = sellers winning RIGHT NOW. <em>Colour changes before value crosses zero — it's your earliest warning.</em></div>
+    </div>
+    <div class="rule">
+      <div class="rn">3</div>
+      <div class="rt"><strong>Which direction is it moving?</strong> Less negative = momentum shifting, reversal approaching. More negative = acceleration, do not fight it. This is your <em>velocity signal</em> — the earliest of all three layers.</div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">VOLUMETRIC SPECTROGRAM · OBERLUNAR · MENTAL HACK V2 · NOT FINANCIAL ADVICE</div>
+
+</body>
+</html>****
